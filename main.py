@@ -223,11 +223,30 @@ fft(file_name)
 
 '''
 
-rsa_keys = Key(1000)
 
-p, q = rsa_keys.generate_pq(20)
+'''
+      RSA part
+'''
+
+
+# TODO setting correct keysize for encrypting IDAT chunk
+rsa_keys = Key(1000) # size of key for the future (? IDAT size)
+
+p, q = rsa_keys.generate_pq(10) # set to 2000 for good bitlength
 
 print(f'My keys:\n p of bitcount:{p.bit_length()}: {p},'
       f'\n q of bitcount:{q.bit_length()}: {q} ')
 
 print(nt.isprime(q), nt.isprime(p))
+
+public_keys, private_keys = rsa_keys.get_keys(p, q)
+
+e, n = public_keys
+d, n = private_keys
+
+print(f'\nPublic keys: \ne is {nt.isprime(e)} = {e},\n'
+      f'n is {nt.isprime(n)} = {n},\n'
+      f'Private keys: \nd is {nt.isprime(d)} = {d},\n'
+      f'n is {nt.isprime(n)} = {n},\n')
+
+

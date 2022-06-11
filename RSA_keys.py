@@ -11,6 +11,7 @@ class Key:
 
     # returns pair of p and q
     def generate_pq(self, n):
+
         p = q = 4
         while not nt.isprime(p):
             p = random.randrange(2**(n-1)+1, 2**n-1)
@@ -22,10 +23,13 @@ class Key:
 
     # returns pair of public and private keys
     def get_keys(self, p, q):
+
         n = p*q
         self.n = n
+
         fi = (p-1)*(q-1)
         d = pow(self.e, -1, fi)
+        self.d = d
 
         public_key = (self.e, n)
         private_key = (d, n)
