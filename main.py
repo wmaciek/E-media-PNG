@@ -7,21 +7,22 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from RSA_keys import Key
 from RSA_keys import nt
-
+import sys
 '''
     tornado.png -> with PLTE chunk
     dice.png -> with tIME, gAMA
 '''
-'''
-# file_name = 'tornado.png'
-file_name = 'dice.png'
+
+# file_name = 'PNGs/' + 'tornado.png'
+file_name = 'PNGs/' + 'dice.png'
 # file_name = 'Screen_color_test_VGA_256colors.png'
 # file_name = 'Screen_color_test_VGA_4colors.png'
+
 file = open(file_name, 'rb')
 
 # image showing
 img_show = Image.open(file_name)
-img_show.show()
+# img_show.show()
 
 
 # Checking if it is a valid PNG file that we loaded
@@ -81,11 +82,14 @@ while 1:
 
 list_of_chunk_types = []
 
+'''
 # chunks showing:
 for ch_type, data, len, crc in list_of_chunks:
     print(ch_type, data)
     list_of_chunk_types.append(ch_type)
+'''
 
+'''
 ######################
 ####### IHDR #########
 # IHDR is always first
@@ -220,7 +224,6 @@ def fft(image):
 
 
 fft(file_name)
-
 '''
 
 
@@ -230,9 +233,9 @@ fft(file_name)
 
 
 # TODO setting correct keysize for encrypting IDAT chunk
-rsa_keys = Key(1000) # size of key for the future (? IDAT size)
+rsa_keys = Key(1000)  # size of key for the future (? IDAT size)
 
-p, q = rsa_keys.generate_pq(10) # set to 2000 for good bitlength
+p, q = rsa_keys.generate_pq(100)  # set to 2000 for good bitlength
 
 print(f'My keys:\n p of bitcount:{p.bit_length()}: {p},'
       f'\n q of bitcount:{q.bit_length()}: {q} ')
@@ -249,4 +252,41 @@ print(f'\nPublic keys: \ne is {nt.isprime(e)} = {e},\n'
       f'Private keys: \nd is {nt.isprime(d)} = {d},\n'
       f'n is {nt.isprime(n)} = {n},\n')
 
+list_of_len = []
+for ch_type, data, len, crc in list_of_chunks:
+    print(ch_type, len)
+    list_of_len.append(len)
+
+IDAT_len = list(len for chunk_type, chunk_data, len, crc in list_of_chunks if chunk_type == b'IDAT')
+IDAT_data = b''.join(chunk_data for chunk_type, chunk_data, len, crc in list_of_chunks if chunk_type == b'IDAT')
+
+# print(f'ex IDAT of length: {IDAT_len}\n'
+#       f'Data: {sys.getsizeof(IDAT_data)}')
+
+bytes_array = bytearray(IDAT_data) # bytes array for IDAT data
+
+example_data_forRSA = bytes_array[:10]
+print(f'\nlen of ex data: {sys.getsizeof(example_data_forRSA)}\n')
+
+
+# TODO Functions to move to class RSA
+def encripting(data, e, n):
+      c = pow(int(data, 2), e, n)
+      return int(c)
+
+
+def decripting(c, d, n):
+      m = pow(c, d, n)
+      return m
+
+
+# getting binary number from bytes
+binary_example_dataRSA = bin(int.from_bytes(example_data_forRSA, "big"))
+
+c = encripting(binary_example_dataRSA, e, n)
+m = decripting(c, d, n)
+
+print(f'data for encryption:\n{binary_example_dataRSA}\n'
+      f'after encryption:\n{bin(c)}\n'
+      f'after decryption:\n{bin(m)}')
 
