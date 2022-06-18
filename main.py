@@ -13,8 +13,11 @@ import sys
     dice.png -> with tIME, gAMA
 '''
 
-# file_name = 'PNGs/' + 'tornado.png'
-file_name = 'PNGs/' + 'dice.png'
+# file_name = 'PNGs/' + 'tornado_encrypted.png'  # new encrypted file
+
+file_name = 'PNGs/' + 'tornado.png'
+
+# file_name = 'PNGs/' + 'dice.png'
 # file_name = 'Screen_color_test_VGA_256colors.png'
 # file_name = 'Screen_color_test_VGA_4colors.png'
 
@@ -89,7 +92,7 @@ for ch_type, data, len, crc in list_of_chunks:
     list_of_chunk_types.append(ch_type)
 
 
-'''
+
 ######################
 ####### IHDR #########
 # IHDR is always first
@@ -224,7 +227,7 @@ def fft(image):
 
 
 fft(file_name)
-'''
+
 
 
 '''
@@ -233,29 +236,31 @@ fft(file_name)
 
 
 # TODO setting correct keysize for encrypting IDAT chunk
-rsa_keys = Key(1000)  # size of key for the future (? IDAT size)
+# rsa_keys = Key(1000)  # size of key for the future (? IDAT size)
 
-p, q = rsa_keys.generate_pq(2000)  # set to 2000 for good bitlength
+# p, q = rsa_keys.generate_pq(2000)  # set to 2000 for good bitlength
 
-print(f'My keys:\n p of bitcount:{p.bit_length()}: {p},'
-      f'\n q of bitcount:{q.bit_length()}: {q} ')
+# print(f'My keys:\n p of bitcount:{p.bit_length()}: {p},'
+      # f'\n q of bitcount:{q.bit_length()}: {q} ')
 
-print(nt.isprime(q), nt.isprime(p))
+# print(nt.isprime(q), nt.isprime(p))
 
-public_keys, private_keys = rsa_keys.get_keys(p, q)
+# public_keys, private_keys = rsa_keys.get_keys(p, q)
 
-e, n = public_keys
+# e, n = public_keys
 # d, n = private_keys
 
 # example keys to remember (don't have to generate all over again)
 # They are 4000 bit long
+e = 536357
 n = 7303485625255718087810243101215839334898553660596918512774136516725077749135609446454876232746626319553232007775995541610513764890167330936049735520247291749458950590854163346152745085728900545020168058392882861954548199812180128759697093808023636490284012229575465368457792287216771498352681721791508361022126142498899524457382129048429270486475813840674579603202847712234677702499372799504389713468248732094587673512820897794048428847332748316244828464014141813099435024588152341705875608350499921703420297299234999746103099805415024687897584772526401010143436651685006163200682172395554371131117009006376923847282756277342434983484024411334996789182274990751337669890133407338591385758952290454698695377548695575781892036651263448491063308131386509375737243080934714698878237410316885740886002262872422175341961507623280138155636979477282849001872975296626455263322983177946629798268978282228596030189707257803004960383178862826563517852895672387296790201929244879196909672111131201619802225928333599183508356156192487847030605579737959923644327702316490300183706928128584644215400027004936185081601607510183142680532453102309237853466332962128283389852144109380913653587167537643005623538838511640107
 d = 6713100441032873659317301440830284292187828171673495128799753341049829367984114045500019544340964647687535316652091427936958566944875323994042250984851348695893337164036458048749812768854229493965666249881499171155764281080334186891437358414928215329920217372348462734055287052462946039089397712425145233461869963945576296305426030835573378085552302334923507560037445063887851015894620169319434870319295963178688304695978056802588342133569702492758928163068575433634727368379566416511757420741775461865485500456827924078233020551739992525749657957023989055798123766969962242420507816605373482526825762232564387073150442426295223562866090044662935024254334487283738437402406726666207150577317142471283970090824147961914582003515052960765526727225212192777817910856896501141433509764984874031393446801960069135920390085687432262985011833928025407635511854408813878966536131586236211217937389610117828372711053822875597993635744030710108748194403964485273231913413771248755487980733823800781744598196844265244935609081962333729162288105482069761348939220302716082130952561245071267685551186161686695242334854675121251694552244413040952764005521617584399622051436910865462297953810634026305695749117332797
 
-print(f'\nPublic keys: \ne is {nt.isprime(e)} = {e},\n'
-      f'n is {nt.isprime(n)} = {n},\n'
-      f'Private keys: \nd is {nt.isprime(d)} = {d},\n'
-      f'n is {nt.isprime(n)} = {n},\n')
+# Keys showing:
+# print(f'\nPublic keys: \ne is {nt.isprime(e)} = {e},\n'
+#       f'n is {nt.isprime(n)} = {n},\n'
+#       f'Private keys: \nd is {nt.isprime(d)} = {d},\n'
+#       f'n is {nt.isprime(n)} = {n},\n')
 
 list_of_len = []
 for ch_type, data, len, crc in list_of_chunks:
@@ -265,14 +270,13 @@ for ch_type, data, len, crc in list_of_chunks:
 IDAT_len = list(len for chunk_type, chunk_data, len, crc in list_of_chunks if chunk_type == b'IDAT')
 IDAT_data = b''.join(chunk_data for chunk_type, chunk_data, len, crc in list_of_chunks if chunk_type == b'IDAT')
 
-# print(f'ex IDAT of length: {IDAT_len}\n'
-#         f'Data: {sys.getsizeof(IDAT_data)}')
+print(f'\nIDAT of length: {IDAT_len}\n')
 
 IDAT_size = sys.getsizeof(IDAT_data)
-print(IDAT_size)
-bytes_array = bytearray(IDAT_data) # bytes array for IDAT data
-blockSize = 4000 - 1
-amountBlocks = int(IDAT_size/blockSize)
+print(f'Size of all data from IDAT: {IDAT_size}\n')
+bytes_array = bytearray(IDAT_data)  # bytes array for IDAT data
+blockSize = 4000 - 1  # lesser than size of a key
+amountBlocks = int(IDAT_size/blockSize) + 1
 shape = (amountBlocks, blockSize)
 bytes_matrix = []
 
@@ -288,20 +292,34 @@ def decrypting(c, d, n):
     return m
 
 
+# Padding a block of data
+def padding(seq, num_bits):
+    pad_size = num_bits - sys.getsizeof(seq)
+    for _ in range(pad_size):
+        seq.append(0)
+    return seq
+
+print(f'\n!!!!!!!!!!!!size before padding: {sys.getsizeof(bytes_array)}\n')
+
+
 cipher_data = []
 
 for i in range(0, amountBlocks):
     if IDAT_size <= (i+1)*blockSize:
-        endOfBlock = IDAT_size
-    else:
-        endOfBlock = (i+1)*blockSize
+        bytes_array = padding(bytes_array, amountBlocks*blockSize)  # padding
+
+    endOfBlock = (i+1)*blockSize
     cipher_int = encrypting(int.from_bytes(IDAT_data[i*blockSize:endOfBlock], 'big'), e, n)
     cipher_hex = cipher_int.to_bytes(blockSize+1, 'big')
+
     for j in range(blockSize):
         cipher_data.append(cipher_hex[j])
+
+total_size = blockSize * amountBlocks
+
 example_data_forRSA = bytes_array[:1]
-print("Cipher Data")
-print(cipher_data)
+print("Cipher Data:")
+print(cipher_data[:100])
 print(f'\nlen of ex data: {sys.getsizeof(example_data_forRSA)}\n')
 
 
@@ -314,4 +332,57 @@ m = decrypting(c, d, n)
 print(f'data for encryption:\n{binary_example_dataRSA}\n'
       f'after encryption:\n{(c)}\n'
       f'after decryption:\n{(m)}')
+
+print(f'\n!!!!!!!! {blockSize}, {amountBlocks} size after padding: {sys.getsizeof(bytes_array)}\n')
+
+#####
+# Creating encrypted PNG
+#####
+main_chunks = [b'IHDR', b'IDAT', b'IEND']
+if PLTE_present:
+    main_chunks.insert(1, b'PLTE')
+print(main_chunks)
+
+new_file_name = file_name[:-4] + "_encrypted.png"
+new_file_handler = open(new_file_name, 'wb')
+new_file_handler.write(PNG_sig)
+
+for chunk in list_of_chunks:
+    if chunk[0] != b'IDAT':
+        new_file_handler.write(struct.pack('>I', chunk[2]))
+        new_file_handler.write(chunk[0])
+        new_file_handler.write(chunk[1])
+        new_file_handler.write(struct.pack('>I', chunk[3]))
+    else:
+        new_file_handler.write(struct.pack('>I', total_size))  # get len
+        new_file_handler.write(chunk[0])
+        new_file_handler.write(bytes(cipher_data))  # insert data after encryption
+        new_file_handler.write(struct.pack('>I', zlib.crc32(bytes(cipher_data), zlib.crc32(struct.pack('>4s', b'IDAT')))))
+
+
+new_file_handler.close()
+
+# # Creating decrypted PNG
+# main_chunks = [b'IHDR', b'IDAT', b'IEND']
+# if PLTE_present:
+#     main_chunks.insert(1, b'PLTE')
+# print(main_chunks)
+#
+# new_file_name = file_name[:-14] + "_decrypted.png"
+# new_file_handler = open(new_file_name, 'wb')
+# new_file_handler.write(PNG_sig)
+#
+# for chunk in list_of_chunks:
+#     if chunk[0] != b'IDAT':
+#         new_file_handler.write(struct.pack('>I', chunk[2]))
+#         new_file_handler.write(chunk[0])
+#         new_file_handler.write(chunk[1])
+#         new_file_handler.write(struct.pack('>I', chunk[3]))
+#     else:
+#         new_file_handler.write(struct.pack('>I', chunk[2]))
+#         new_file_handler.write(chunk[0])
+#         new_file_handler.write("""decrypted_data""")  # insert data after decryption
+#         new_file_handler.write(struct.pack('>I', chunk[3]))
+#
+# new_file_handler.close()
 
