@@ -15,7 +15,7 @@ import sys
 
 # file_name = 'PNGs/' + 'tornado_encrypted.png'  # new encrypted file
 
-file_name = 'PNGs/' + 'dice.png'
+file_name = 'PNGs/' + 'ball_encrypted.png'
 
 # file_name = 'PNGs/' + 'dice.png'
 # file_name = 'Screen_color_test_VGA_256colors.png'
@@ -109,7 +109,7 @@ print(f'\nIHDR CHUNK metadata:\nwidth: {width}, height: {height},\nbit_depth: {b
 ##################################
 from itertools import zip_longest
 
-
+filename = 'sample.png'
 def sqrt_int(X: int):
     N = math.floor(math.sqrt(X))
     while bool(X % N):
@@ -304,7 +304,7 @@ def RSA_comprison(message):
           f'    {int.from_bytes(cipher_from_library, "big")}\n'
           f'Message after encryption using our RSA:\n'
           f'    {cipher_ours}\n'
-          f'After encryption:\nlibrary: {int.from_bytes(decrypted_library, "big")}, ours: {decrypted_ours}\n'
+          f'After decryption:\nlibrary: {int.from_bytes(decrypted_library, "big")}, ours: {decrypted_ours}\n'
           f'Are the the same after encryption? {cipher_from_library==cipher_ours} and after decryption? '
           f'{int.from_bytes(decrypted_library, "big")==decrypted_ours}\n'
           f'-------- * ---------\n')
@@ -324,58 +324,66 @@ def padding(seq, num_bits):
 
 print(f'\n!!!!!!!!!!!!size before padding: {sys.getsizeof(bytes_array)}\n')
 
-IDAT_size = sys.getsizeof(IDAT_data)
+IDAT_size = IDAT_data.__len__()
 print(f'Size of all data from IDAT: {IDAT_size}\n')
 
-blockSize = 500  # lesser than size of a key
+blockSize = 500   # lesser than size of a key
+blockSize_subtracted = blockSize - 1
 amountBlocks = int(IDAT_size/blockSize) + 1
 cipher_data = bytearray()
 tmp_IDAT = bytearray()
+amount_zeros = 0
 
 for i in range(0, amountBlocks):
-    endOfBlock = (i + 1) * blockSize
-    if IDAT_size < (i+1)*blockSize: # ten rozmiar trzeba jakoś inaczej ogarnąć, ale może być dobrze
-        endOfBlock = (i+1)*blockSize - ((i+1)*blockSize - IDAT_size)
-        for _ in range((i+1)*blockSize - IDAT_size):
+    endOfBlock = (i + 1) * blockSize_subtracted
+    if IDAT_size < (i+1)*blockSize_subtracted: # ten rozmiar trzeba jakoś inaczej ogarnąć, ale może być dobrze
+        endOfBlock = (i+1)*blockSize_subtracted - ((i+1)*blockSize_subtracted - IDAT_size)
+        amount_zeros = (i+1)*blockSize_subtracted - IDAT_size
+        for _ in range((i+1)*blockSize_subtracted - IDAT_size):
             tmp_IDAT = b'0' + tmp_IDAT
-        print(tmp_IDAT)
-        #tmp_IDAT = padding(tmp_IDAT, amountBlocks*blockSize)  # padding
 
-    tmp_IDAT = tmp_IDAT + IDAT_data[i * blockSize:endOfBlock]
-    print("tmp_IDAT")
-    print(tmp_IDAT)
-    print(endOfBlock)
+    tmp_IDAT = tmp_IDAT + IDAT_data[i * blockSize_subtracted:endOfBlock]
     cipher_int = encrypting(int.from_bytes(tmp_IDAT, 'big'), e, n)
-    print("cipher_int")
-    print(cipher_int)
-    cipher_hex = cipher_int.to_bytes(blockSize+1, 'big')
-    print("cipher_hex")
-    print(cipher_hex)
+    cipher_hex = cipher_int.to_bytes(blockSize, 'big')
     tmp_IDAT = bytearray()
-    cipher_data = cipher_data + cipher_hex
-    #for j in range(blockSize):
-     #   cipher_data.append(cipher_hex[j])
+    for j in range(blockSize_subtracted):
+        cipher_data.append(cipher_hex[j])
 
 total_sizex = sys.getsizeof(cipher_data)
 total_size = blockSize * amountBlocks
 
 example_data_forRSA = bytes_array[:1]
 print("Cipher Data:")
-print(cipher_data[:100])
-print(f'\nlen of ex data: {sys.getsizeof(example_data_forRSA)}\n')
+#print(cipher_data[:100])
 
 
-# getting int from bytes
-binary_example_dataRSA = int.from_bytes(example_data_forRSA, "big")
+# Decrypting
+decrypted_cipher_data = bytearray()
+for i in range(0, amountBlocks):
+    endOfBlock = (i + 1) * blockSize
 
-c = encrypting(binary_example_dataRSA, e, n)
-m = decrypting(c, d, n)
+    tmp_IDAT = cipher_data[i * blockSize:endOfBlock]
+    decrypted_cipher_int = decrypting(int.from_bytes(tmp_IDAT, 'big'), d, n)
+    tmp_IDAT = bytearray()
+    if decrypted_cipher_data.__len__() + blockSize_subtracted > IDAT_data.__len__():
+        # last original chunk
+        decrypted_hex_len = IDAT_data.__len__() - decrypted_cipher_data.__len__()
+    else:
+        # standard encryption_RSA_chunk length
+        decrypted_hex_len = blockSize
+    print(decrypted_hex_len)
+    decrypted_cipher_hex = decrypted_cipher_int.to_bytes(blockSize, 'big')
+    # for byte in decrypted_cipher_hex:
+    #     decrypted_cipher_data.append(byte)
+    for j in range(decrypted_hex_len):
+        decrypted_cipher_data.append(decrypted_cipher_hex[j])
 
-print(f'data for encryption:\n{binary_example_dataRSA}\n'
-      f'after encryption:\n{(c)}\n'
-      f'after decryption:\n{(m)}')
-
-print(f'\n!!!!!!!! {blockSize}, {amountBlocks} size after padding: {sys.getsizeof(bytes_array)}\n')
+#decrypted_cipher_int = decrypting(int.from_bytes(cipher_data, 'big'), d, n)
+#decrypted_cipher_hex = decrypted_cipher_int.to_bytes(blockSize+1, 'big')
+print(f'Original data {IDAT_data}')
+print(IDAT_data.__len__())
+print(f'After decryption data {decrypted_cipher_data}')
+print(decrypted_cipher_data.__len__())
 
 #####
 # Creating encrypted PNG
@@ -388,6 +396,7 @@ print(main_chunks)
 new_file_name = file_name[:-4] + "_encrypted.png"
 new_file_handler = open(new_file_name, 'wb')
 new_file_handler.write(PNG_sig)
+IDAT_writen = False
 
 for chunk in list_of_chunks:
     if chunk[0] in main_chunks:
@@ -396,7 +405,8 @@ for chunk in list_of_chunks:
             new_file_handler.write(chunk[0])
             new_file_handler.write(chunk[1])
             new_file_handler.write(struct.pack('>I', chunk[3]))
-        else:
+        elif IDAT_writen == False:
+            IDAT_writen = True
             new_file_handler.write(struct.pack('>I', total_size))  # get len
             new_file_handler.write(chunk[0])
             new_file_handler.write(bytes(cipher_data))  # insert data after encryption
@@ -406,25 +416,28 @@ for chunk in list_of_chunks:
 new_file_handler.close()
 
 # # Creating decrypted PNG
-# main_chunks = [b'IHDR', b'IDAT', b'IEND']
-# if PLTE_present:
-#     main_chunks.insert(1, b'PLTE')
-# print(main_chunks)
-#
-# new_file_name = file_name[:-14] + "_decrypted.png"
-# new_file_handler = open(new_file_name, 'wb')
-# new_file_handler.write(PNG_sig)
-#
-# for chunk in list_of_chunks:
-#     if chunk[0] != b'IDAT':
-#         new_file_handler.write(struct.pack('>I', chunk[2]))
-#         new_file_handler.write(chunk[0])
-#         new_file_handler.write(chunk[1])
-#         new_file_handler.write(struct.pack('>I', chunk[3]))
-#     else:
-#         new_file_handler.write(struct.pack('>I', chunk[2]))
-#         new_file_handler.write(chunk[0])
-#         new_file_handler.write("""decrypted_data""")  # insert data after decryption
-#         new_file_handler.write(struct.pack('>I', chunk[3]))
-#
-# new_file_handler.close()
+main_chunks = [b'IHDR', b'IDAT', b'IEND']
+if PLTE_present:
+    main_chunks.insert(1, b'PLTE')
+print(main_chunks)
+
+new_file_name = filename[:-4] + "_decrypted.png"
+new_file_handler = open(new_file_name, 'wb')
+new_file_handler.write(PNG_sig)
+
+IDAT_writen = False
+for chunk in list_of_chunks:
+    if chunk[0] in main_chunks:
+        if chunk[0] != b'IDAT':
+            new_file_handler.write(struct.pack('>I', chunk[2]))
+            new_file_handler.write(chunk[0])
+            new_file_handler.write(chunk[1])
+            new_file_handler.write(struct.pack('>I', chunk[3]))
+        elif IDAT_writen == False:
+            IDAT_writen = True
+            new_file_handler.write(struct.pack('>I', chunk[0].__len__() + decrypted_cipher_data.__len__()))  # get len
+            new_file_handler.write(chunk[0])
+            new_file_handler.write(bytes(decrypted_cipher_data))  # insert data after encryption
+            new_file_handler.write(struct.pack('>I', zlib.crc32(bytes(decrypted_cipher_data), zlib.crc32(struct.pack('>4s', b'IDAT')))))
+
+new_file_handler.close()
