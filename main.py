@@ -13,10 +13,9 @@ import sys
     dice.png -> with tIME, gAMA
 '''
 
-# file_name = 'PNGs/' + 'tornado_encrypted.png'  # new encrypted file
+file_name = 'PNGs/' + 'tornado.png'  # new encrypted file
 
-file_name = 'PNGs/' + 'ball.png'
-
+# file_name = 'PNGs/' + 'ball.png'
 # file_name = 'PNGs/' + 'dice.png'
 # file_name = 'Screen_color_test_VGA_256colors.png'
 # file_name = 'Screen_color_test_VGA_4colors.png'
@@ -109,7 +108,6 @@ print(f'\nIHDR CHUNK metadata:\nwidth: {width}, height: {height},\nbit_depth: {b
 ##################################
 from itertools import zip_longest
 
-filename = 'sample.png'
 def sqrt_int(X: int):
     N = math.floor(math.sqrt(X))
     while bool(X % N):
@@ -279,8 +277,8 @@ print(f'\nIDAT of length: {IDAT_len}\n')
 import rsa as RSA
 # TODO Functions to move to class RSA
 def encrypting(data, e, n):
-    c = pow(int(data), e, n)  # bytes->int to be able to pow()
-    return int(c)
+    c = pow(data, e, n)  # bytes->int to be able to pow()
+    return c
 
 
 def decrypting(c, d, n):
@@ -327,26 +325,34 @@ print(f'\n!!!!!!!!!!!!size before padding: {sys.getsizeof(bytes_array)}\n')
 IDAT_size = IDAT_data.__len__()
 print(f'Size of all data from IDAT: {IDAT_size}\n')
 
-blockSize = 500   # lesser than size of a key
-blockSize_subtracted = blockSize - 1
+keySize = 4000
+blockSize = keySize // 8 - 1   # lesser than size of a key
+blockSize_bytes = keySize // 8
+# blockSize_subtracted = blockSize - 1
 amountBlocks = int(IDAT_size/blockSize) + 1
-cipher_data = bytearray()
-tmp_IDAT = bytearray()
+cipher_data = []
+tmp_IDAT = []
 amount_zeros = 0
 
-for i in range(0, amountBlocks):
-    endOfBlock = (i + 1) * blockSize_subtracted
-    if IDAT_size < (i+1)*blockSize_subtracted: # ten rozmiar trzeba jakoś inaczej ogarnąć, ale może być dobrze
-        endOfBlock = (i+1)*blockSize_subtracted - ((i+1)*blockSize_subtracted - IDAT_size)
-        amount_zeros = (i+1)*blockSize_subtracted - IDAT_size
-        for _ in range((i+1)*blockSize_subtracted - IDAT_size):
-            tmp_IDAT = b'0' + tmp_IDAT
+# print(f'size1: {IDAT_data.__len__()}, size2: {IDAT_data.bit_length()}')
 
-    tmp_IDAT = tmp_IDAT + IDAT_data[i * blockSize_subtracted:endOfBlock]
-    cipher_int = encrypting(int.from_bytes(tmp_IDAT, 'big'), e, n)
-    cipher_hex = cipher_int.to_bytes(blockSize, 'big')
-    tmp_IDAT = bytearray()
-    for j in range(blockSize_subtracted):
+for i in range(0, amountBlocks):
+    endOfBlock = (i + 1) * blockSize
+    if IDAT_size < (i+1)*blockSize: # ten rozmiar trzeba jakoś inaczej ogarnąć, ale może być dobrze
+        endOfBlock = (i+1)*blockSize - ((i+1)*blockSize - IDAT_size)
+        amount_zeros = (i+1)*blockSize - IDAT_size
+        for _ in range((i+1)*blockSize - IDAT_size):
+            tmp_IDAT = b'0' + bytearray(tmp_IDAT)
+
+    tmp_IDAT = IDAT_data[i * blockSize:endOfBlock]
+    tmp_data_int = int.from_bytes(tmp_IDAT, "big")
+    cipher_int = encrypting(tmp_data_int, e, n)
+    print(f'{tmp_IDAT.__len__()}, {cipher_int.bit_length()} int exam: {cipher_int}')
+
+    cipher_hex = cipher_int.to_bytes(keySize, 'big')
+    print(f'hex exam of len: {cipher_hex.__len__()} {cipher_hex}')
+    tmp_IDAT = []
+    for j in range(keySize):
         cipher_data.append(cipher_hex[j])
 
 total_sizex = sys.getsizeof(cipher_data)
@@ -358,32 +364,36 @@ print("Cipher Data:")
 
 
 # Decrypting
-decrypted_cipher_data = bytearray()
+decrypted_cipher_data = []
 for i in range(0, amountBlocks):
-    endOfBlock = (i + 1) * blockSize
+    endOfBlock = (i + 1) * keySize
 
-    tmp_IDAT = cipher_data[i * blockSize:endOfBlock]
+    tmp_IDAT = cipher_data[i * keySize:endOfBlock]
     decrypted_cipher_int = decrypting(int.from_bytes(tmp_IDAT, 'big'), d, n)
-    tmp_IDAT = bytearray()
-    if decrypted_cipher_data.__len__() + blockSize_subtracted > IDAT_data.__len__():
+    tmp_IDAT = []
+    if decrypted_cipher_data.__len__() + blockSize > IDAT_data.__len__():
         # last original chunk
         decrypted_hex_len = IDAT_data.__len__() - decrypted_cipher_data.__len__()
     else:
         # standard encryption_RSA_chunk length
         decrypted_hex_len = blockSize
-    print(decrypted_hex_len)
-    decrypted_cipher_hex = decrypted_cipher_int.to_bytes(blockSize, 'big')
+    # print(decrypted_hex_len)
+    print(f' dlugosc po dek: {decrypted_hex_len}')
+    decrypted_cipher_hex = decrypted_cipher_int.to_bytes(decrypted_hex_len, 'big')
     # for byte in decrypted_cipher_hex:
     #     decrypted_cipher_data.append(byte)
+    print(f' {decrypted_cipher_hex}')
     for j in range(decrypted_hex_len):
         decrypted_cipher_data.append(decrypted_cipher_hex[j])
 
 #decrypted_cipher_int = decrypting(int.from_bytes(cipher_data, 'big'), d, n)
 #decrypted_cipher_hex = decrypted_cipher_int.to_bytes(blockSize+1, 'big')
-print(f'Original data {IDAT_data}')
-print(IDAT_data.__len__())
-print(f'After decryption data {decrypted_cipher_data}')
-print(decrypted_cipher_data.__len__())
+# print(f'Original data {IDAT_data}')
+# print(IDAT_data.__len__())
+# print(f'After encryption data {cipher_data}')
+# print(cipher_data.__len__())
+# print(f'After decryption data {decrypted_cipher_data}')
+# print(decrypted_cipher_data.__len__())
 
 #####
 # Creating encrypted PNG
@@ -407,7 +417,7 @@ for chunk in list_of_chunks:
             new_file_handler.write(struct.pack('>I', chunk[3]))
         elif IDAT_writen == False:
             IDAT_writen = True
-            new_file_handler.write(struct.pack('>I', cipher_data.__len__() ))  # get len
+            new_file_handler.write(struct.pack('>I', cipher_data.__len__()))  # get len
             new_file_handler.write(chunk[0])
             new_file_handler.write(bytes(cipher_data))  # insert data after encryption
             new_file_handler.write(struct.pack('>I', zlib.crc32(bytes(cipher_data), zlib.crc32(struct.pack('>4s', b'IDAT')))))
@@ -421,9 +431,10 @@ if PLTE_present:
     main_chunks.insert(1, b'PLTE')
 print(main_chunks)
 
-new_file_name = filename[:-4] + "_decrypted.png"
+new_file_name = file_name[:-4] + "_decrypted.png"
 new_file_handler = open(new_file_name, 'wb')
 new_file_handler.write(PNG_sig)
+
 
 IDAT_writen = False
 for chunk in list_of_chunks:
@@ -441,3 +452,24 @@ for chunk in list_of_chunks:
             new_file_handler.write(struct.pack('>I', zlib.crc32(bytes(decrypted_cipher_data), zlib.crc32(struct.pack('>4s', b'IDAT')))))
 
 new_file_handler.close()
+
+
+
+# sample = IDAT_data[:499]
+# print(f'len of sample data: {sample.__len__()}')
+# sample_int = int.from_bytes(sample, "big")
+# print(f'len of sample int data: {sample_int.bit_length()}')
+#
+# cipher_int = encrypting(sample_int, e, n)
+# print(f'int exam: {cipher_int}')
+#
+# cipher_hex = cipher_int.to_bytes(keySize, 'big')
+# print(cipher_hex.__len__())
+# print(cipher_hex)
+#
+# decrypted_sample_int = decrypting(int.from_bytes(cipher_hex, 'big'), d, n)
+# print(f'len of sample: {decrypted_sample_int.bit_length()}')
+# decrypted_sample_hex = decrypted_sample_int.to_bytes(sample.__len__(), 'big')
+# print(f'len of decrypted: {decrypted_sample_hex.__len__()}')
+# print(f'{sample}, \n{decrypted_sample_hex}')
+
