@@ -15,7 +15,7 @@ import sys
 
 # file_name = 'PNGs/' + 'tornado_encrypted.png'  # new encrypted file
 
-file_name = 'PNGs/' + 'ball_encrypted.png'
+file_name = 'PNGs/' + 'ball.png'
 
 # file_name = 'PNGs/' + 'dice.png'
 # file_name = 'Screen_color_test_VGA_256colors.png'
@@ -407,7 +407,7 @@ for chunk in list_of_chunks:
             new_file_handler.write(struct.pack('>I', chunk[3]))
         elif IDAT_writen == False:
             IDAT_writen = True
-            new_file_handler.write(struct.pack('>I', total_size))  # get len
+            new_file_handler.write(struct.pack('>I', cipher_data.__len__() ))  # get len
             new_file_handler.write(chunk[0])
             new_file_handler.write(bytes(cipher_data))  # insert data after encryption
             new_file_handler.write(struct.pack('>I', zlib.crc32(bytes(cipher_data), zlib.crc32(struct.pack('>4s', b'IDAT')))))
@@ -435,7 +435,7 @@ for chunk in list_of_chunks:
             new_file_handler.write(struct.pack('>I', chunk[3]))
         elif IDAT_writen == False:
             IDAT_writen = True
-            new_file_handler.write(struct.pack('>I', chunk[0].__len__() + decrypted_cipher_data.__len__()))  # get len
+            new_file_handler.write(struct.pack('>I', decrypted_cipher_data.__len__()))  # get len
             new_file_handler.write(chunk[0])
             new_file_handler.write(bytes(decrypted_cipher_data))  # insert data after encryption
             new_file_handler.write(struct.pack('>I', zlib.crc32(bytes(decrypted_cipher_data), zlib.crc32(struct.pack('>4s', b'IDAT')))))
